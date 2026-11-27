@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activate License — Amnox Auto Clipper</title>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card: #131a26;
+      --border: #233044;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --error-bg: rgba(239, 68, 68, 0.12);
+      --error-border: #ef4444;
+      --error-text: #fca5a5;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      width: 100%;
+      max-width: 460px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(16, 185, 129, 0.12);
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    h1 { font-size: 22px; margin-bottom: 8px; }
+    p.sub { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 22px; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+    }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      background: #0b0f17;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      margin-bottom: 16px;
+      outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+    button.primary {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      color: #042f2e;
+      font-weight: 700;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button.primary:hover { background: var(--accent-hover); }
+    button.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .alert {
+      display: none;
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .alert.error {
+      display: block;
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: var(--error-text);
+    }
+    .alert.success {
+      display: block;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid var(--accent);
+      color: #d1fae5;
+    }
+    .key-box {
+      margin-top: 10px;
+      padding: 12px;
+      background: #0b0f17;
+      border: 1px dashed var(--accent);
+      border-radius: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: #34d399;
+      word-break: break-all;
+      user-select: all;
+    }
+    button.copy-btn {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #1e293b;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    button.copy-btn:hover { background: #334155; }
+    .help {
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">Amnox Auto Clipper</span>
+    <h1>Activate Your License</h1>
+    <p class="sub">Enter your Safepay Tracker ID from your payment receipt and the 8-character Device Code shown inside the app.</p>
+
+    <form id="activateForm">
+      <label for="orderId">Safepay Tracker / Order ID</label>
+      <input id="orderId" type="text" placeholder="track_b7477f46-85f5-4041-8d5b-..." required />
+
+      <label for="deviceCode">App Device Code</label>
+      <input id="deviceCode" type="text" placeholder="7A2F-9C1B" maxlength="12" required />
+
+      <button id="submitBtn" class="primary" type="submit">Generate License Key</button>
+    </form>
+
+    <div id="resultBox" class="alert"></div>
+
+    <div class="help">Need help? Email <strong>amnoxinfo@gmail.com</strong> with your Tracker ID.</div>
+  </div>
+
+  <script>
+    const WORKER_URL = "https://amnox-license.amnox295.workers.dev/activate";
+
+    // Auto-fill tracker/order_id if passed in URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const presetId = params.get("tracker") || params.get("order_id") || params.get("token");
+    if (presetId) document.getElementById("orderId").value = presetId;
+
+    const form = document.getElementById("activateForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const resultBox = document.getElementById("resultBox");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const order_id = document.getElementById("orderId").value.trim();
+      const device_code = document.getElementById("deviceCode").value.trim();
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Activating...";
+      resultBox.className = "alert";
+      resultBox.innerHTML = "";
+
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order_id, device_code }),
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Activation failed. Please verify your details.");
+        }
+
+        resultBox.className = "alert success";
+        resultBox.innerHTML = `
+          <strong>${data.plan} License Activated!</strong><br/>
+          Paste this key into Amnox Auto Clipper:
+          <div class="key-box" id="licenseKeyText">${data.key}</div>
+          <button type="button" class="copy-btn" id="copyBtn">Copy License Key</button>
+        `;
+
+        document.getElementById("copyBtn").addEventListener("click", () => {
+          navigator.clipboard.writeText(data.key);
+          document.getElementById("copyBtn").textContent = "Copied!";
+        });
+      } catch (err) {
+        resultBox.className = "alert error";
+        resultBox.textContent = err.message;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Generate License Key";
+      }
+    });
+  </script>
+</body>
+</html>
